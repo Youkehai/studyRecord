@@ -46,6 +46,12 @@ watch可watch多个key，例如:watch key1 key2 key3。但是一执行unwatch，
 注意：<br/>
 <li>1.一旦建立主从复制关系，那么从机会拿到主机所有数据。<br/></li> 
 <li>2.daemonize属性要设置为yes<br/><br/></li>
+<li>3.从机只能读不能写<br/></li>
 几种情况：<br/>
 1.主机断线，从机不会去抢夺master的职位，在主机回来后，继续保持主从关系<br/>
 2.从机断线，没配置配置文件的replicaof，再次连接，需要重新通过命令和主机绑定，才能将数据同步过来(如果你修改了配置文件中的replicaof属性那么连接回来之后，会自动连上主机)<br/>
+<h1>5.redis实现分布式锁</h1>
+1.通过setnx命令，如果设置成功则设置过期时间，避免锁长时间不释放
+2.也可以通过后面redis升级之后的版本使用set命令 set(key, value, "NX", "PX", time);
+SET mykey "1" EX 60 NX  
+# 设置mykey并保持60秒。这期间无法再设置mykey（再次 SET mykey 会返回false）。
