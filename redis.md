@@ -47,6 +47,9 @@ watch可watch多个key，例如:watch key1 key2 key3。但是一执行unwatch，
 <li>1.一旦建立主从复制关系，那么从机会拿到主机所有数据。<br/></li> 
 <li>2.daemonize属性要设置为yes<br/><br/></li>
 <li>3.从机只能读不能写，除非你配置了从机配置文件的slave-read-only属性为no<br/></li>
+<li>4.从机开启了slave-read-only属性为no，可以修改本机的值，修改的值不会同步到其他主机和从机，当主机又修改了该key，那么该从机会自动同步主机的值<br/>
+例如：本来k1=v1,从机set k1 v2, 那么该从机get k1=v2 ,但其他主机和从机get k1=v1 当主机set k1=233.那么所有的机器get k1=233
+</li>
 几种情况：<br/>
 1.主机断线，从机不会去抢夺master的职位，在主机回来后，继续保持主从关系<br/>
 2.从机断线，没配置配置文件的replicaof属性去指定Ip和端口，再次连接，需要重新通过命令和主机绑定，
