@@ -51,7 +51,20 @@ watch可watch多个key，例如:watch key1 key2 key3。但是一执行unwatch，
 1.主机断线，从机不会去抢夺master的职位，在主机回来后，继续保持主从关系<br/>
 2.从机断线，没配置配置文件的replicaof，再次连接，需要重新通过命令和主机绑定，才能将数据同步过来(如果你修改了配置文件中的replicaof属性那么连接回来之后，会自动连上主机)<br/>
 <h1>5.redis实现分布式锁</h1>
+首先，为了确保分布式锁可用，我们至少要确保锁的实现同时满足以下四个条件：<br/>
+
+互斥性。在任意时刻，只有一个客户端能持有锁。<br/>
+不会发生死锁。即使有一个客户端在持有锁的期间崩溃而没有主动解锁，也能保证后续其他客户端能加锁。<br/>
+具有容错性。只要大部分的Redis节点正常运行，客户端就可以加锁和解锁。<br/>
+解铃还须系铃人。加锁和解锁必须是同一个客户端，客户端自己不能把别人加的锁给解了。<br/>
 1.通过setnx命令，如果设置成功则设置过期时间，避免锁长时间不释放<br/>
 2.也可以通过后面redis升级之后的版本使用set命令 set(key, value, "NX", "PX", time);<br/>
-SET mykey "1" EX 60 NX  
-# 设置mykey并保持60秒。这期间无法再设置mykey（再次 SET mykey 会返回false）。
+set(String key, String value, String nxxx, String expx, long time)接口详解<br/>
+String set(String key, String value, String nxxx, String expx, long time);<br/>
+该方法是： 存储数据到缓存中，并制定过期时间和当Key存在时是否覆盖。<br/>
+
+nxxx： 只能取NX或者XX，如果取NX，则只有当key不存在是才进行set，如果取XX，则只有当key已经存在时才进行set<br/>
+expx： 只能取EX或者PX，代表数据过期时间的单位，EX代表秒，PX代表毫秒。<br/>
+time： 过期时间，单位是expx所代表的单位。<br/>
+SET mykey "1" "NX" "PX" 100  <br/>
+设置mykey并保持0.1秒。这期间无法再设置mykey（再次 SET mykey 会返回false）。
