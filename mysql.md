@@ -51,4 +51,20 @@ explain基础字段解析
      例子2:select * from t1,t2 where t1.clo1=t2.clo1 and t1.clo2='c'，则ref的值为databasename(数据库名称).t2(表名).clo1(字段名),const（常量，对应第二个条件t1.col2='c'，因为指定了值为c则可以将t1.col的值看作为一个常量）。
   </li> 
   <li><h2>1.9 rows 根据表的使用信息和索引的使用情况，大致估算出来找到所需的记录所需要读取多少行。即例如我要查找10条数据，那么我也许需要读取100行数据才能拿到我想要的10行数据。</h2></li>   
+  <li> <h2>1.10 Extra 包含不适合在其他列中显示但是十分重要的信息</h2>
+    覆盖索引：1.就是select的数据列只需要从索引中就能够获取到，不必读取数据行，MySQL可以利用索引返回select列表中的字段，而不必根据索引再次读取数据文件，换句话说就是查询列要被所建的索引覆盖。<br/>
+    理解方式二:索引是高效查找的方法，但是一般数据库也能使用索引找到一个列的数据，因此它不必读取整行数据，毕竟索引叶子节点存储了他们索引的数据，当能通过读取索引就可以得到想要的数据，
+    那就不需要读取行了，一个索引包含了或覆盖了满足查询结果的数据就叫做覆盖索引。<br/>
+    注意:如果要使用覆盖索引，select列表中尽量只写需要查找的列，尽量避免select *
+    <ul>
+      <li>Using filesort 说明mysql会对数据使用一个外部的索引排序，而不是按照表内的索引顺序进行读取，mysql中无法利用索引完成的排序称为文件排序（该情况很危险,尽量使用索引字段和建立索引的顺序字段进行排序进行优化）。</li>
+      <li ><p style="color:red">Using temporary 使用了临时表保存中间结果，Mysql在对查询结果进行排序的时候使用了临时表，常见于order by和分组查询group by（很危险，尽快优化）</p></li>
+      <li>Using index 表示相应的select中使用到了覆盖索引，避免了访问表的数据行，效率提升。如果同时出现using where 表明索引被用来执行索引键值的查找（即使用了索引进行查找）。如果没出现using where ，则表示索引用来读取数据而非执行查找动作。</li>
+      <li>Using where 表示使用了where进行过滤</li>
+      <li>Using join buffer:表示使用了连接缓存，join过多，使用了缓存</li>
+      <li>impossible where：where子句的值总是false,不能用来获取元组。例如:where name ="1" and name="2"</li>
+      <li>select tables optimized away：在没有groub by 的情况下，基于索引优化min/max操作或者对于myisam存储引擎优化成count(*)操作，不必等到执行阶段再计算，查询执行计划生成的阶段即完成优化。</li>
+      <li>distinct：优化distinct操作，在找到第一匹配的元组后即停止查找同样值得动作。</li>
+    </ul>
+  </li>
 </ul>
