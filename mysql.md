@@ -16,7 +16,7 @@ explain基础字段解析
   如果Id有不相同有相同，那么先走id最大的,其他id相同的，可看成是同一组，由上到下顺序执行。
 </li>
   <li>
-    <h2>1.2 select_type:数据读取操作的操作类型<h2>   
+    <h2>1.2 select_type:数据读取操作的操作类型</h2>   
     <ul>
       <li> simple：简单的查询，查询中不包含子查询和Join</li>
       <li> primary：查询中包含任何一个复杂的子查询，最外层的查询被标记成primary，<br/>即explain select t2.* from t2 where id =(select id from t1),这条sql中,查询t2会被标记为primary</li>
@@ -28,8 +28,9 @@ explain基础字段解析
          select* from t1 a right join t2 b on a.id=b.aid<br/>
       </li>     
     </ul>
-    <h2>1.3 table：这一行数据来自于哪张表<h2>    
-    <h2>1.4 type:显示查询使用了何种类型<h2>    
+     </li>     
+   <li> <h2>1.3 table：这一行数据来自于哪张表</h2>      </li> 
+    <li><h2>1.4 type:显示查询使用了何种类型</h2>
     <h5>type的类型从最好到最差的排序是：system>const>eq_ref>ref>fulltext>ref_of_null>index_merge>unique_subquery>index_subquery>range>index>ALL</h5>
       <ul>
         <li>system：表中只有一行记录(相当于是系统表),这是const类型的特例，平时不会出现</li>
