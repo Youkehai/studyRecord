@@ -74,10 +74,11 @@ sentinel monitor “name”  ip port num<br/>
 例如：79之前是80,81的主机，后面79掉线，哨兵选出80为新主机，那么79重新连接之后，在被哨兵监控到之后，会自动变成80的从机。<br/> 
 即:之前79管理80,81， <br/> 79掉线后变成80管理81,<br/> 79重新连上之后变成80管理79,81。
 <h2>4.3.redis Cluster</h2>
-<h3>为什么要用redis Cluster，因为它易扩容，数量太多时，可使用redis Cluster，会将数据分片存储，增加节点也很简单，方便扩容<br/> 
-使用redis-trib.rb创建集群。使用create命令 --replicas 1 参数表示为每个主节点创建一个从节点，其他参数是实例的地址集合。<br/> 
-例：./redis-trib.rb create --replicas 1 127.0.0.1:7001 127.0.0.1:7002 127.0.0.1:7003 127.0.0.1:7004 127.0.0.1:7005 127.0.0.1:7000</h3>
-<h4>不出意外会打印如下信息
+<h3>为什么要用redis Cluster，因为它易扩容，当数据量太多时，可使用redis Cluster，会将数据分片存储，增加节点也很简单，方便扩容<br/> 
+使用redis-trib.rb创建集群。使用create命令 --replicas 1 参数表示为每个主节点创建一个从节点，其他参数是实例的地址集合。</h3>
+<h4>
+例：./redis-trib.rb create --replicas 1 127.0.0.1:7001 127.0.0.1:7002 127.0.0.1:7003 127.0.0.1:7004 127.0.0.1:7005 127.0.0.1:7000<br/> 
+不出意外会打印如下信息：<br/> 
 >>> Creating cluster<br/> 
 >>> Performing hash slots allocation on 6 nodes...<br/> 
 Using 3 masters:<br/> 
