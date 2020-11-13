@@ -68,3 +68,37 @@ explain基础字段解析
     </ul>
   </li>
 </ul>
+
+<h1>2.mysql 索引失效情况</h1>
+若建立了复合索引，为name.age,salary三个字段建立了索引，并且索引顺序为name,age,salary<br/>
+<h2>2.1 索引的最佳左前缀原则：</h2>
+例如:<br/>
+1.1 select * from t where name='1' 可用到索引<br/>
+1.2 select * from t where name='1' and age='3' 可用到索引<br/>
+1.3 select * from t where name='1' and age='3' and salary='4' 可用到索引<br/>
+1.4 select * from t where age='3' and salary='4' 不可用到索引<br/>
+1.5 select * from t where name='1' and salary='4' 可用到索引,但是只能用到name的索引，用不到salary的索引<br/>
+<h5>总结:从最左侧开始，索引的第一个字段不能丢失，不然复合索引会失效，并且索引要连续，中间不能跳过，不然只能用到最左边的第一个索引。</h5>
+<h2>2.2 对索引列进行计算等</h2>
+ <h5>对建立了索引的列进行操作(函数，计算，类型转换(自动或手动))，会导致索引失效并会让该sql变成全表扫描。</h5>
+ <h2>2.3 不能使用索引中范围条件右边的列</h2>
+ <h5>索引会变成range,但是会导致第三个字段失效，只会用到前两个索引，而且第二个会变成范围查找</h5>
+ <h2>2.4 尽量使用覆盖索引</h2>
+ <h5>select后面尽量跟建立了索引的列，少使用select * ,例如上面的可改成select name from t where name='1'</h5>
+  <h2>2.5 使用不等于的时候</h2>
+  <h5>mysql在使用!=和<>的时候会无法使用索引，导致全表扫描</h5>
+  <h2>2.6 使用is null和is not null的时候也无法使用索引</h2>
+  <h5>尽量不使用Null值存储，null值用其他固定值替换</h5>
+   <h2>2.7 使用like '%a'</h2>
+  使用模糊匹配，最好使用右边匹配，不要使用like '%a'，尽量使用like 'a%'。<br/>
+  若必须使用左侧%,又不想索引失效,使用复合索引,例如建立name,age索引，但是需要查询的字段要和索引建立的字段有关联或完全吻合，若超出建立索引的字段(见第五条sql)，则也用不到索引<br/>
+  select name from t1 where name like '%a%'  可以用到索引<br/>
+  select id,name,age from t1 where name like '%a%'  可以用到索引<br/>
+  select name,age from t1 where name like '%a%'  可以用到索引<br/>
+  select * from t1 where name like '%a%'  不可以用到索引 <br/>
+  select id,name,age,email from t1 where name like '%a%'  不可以用到索引<br/>
+   <h2>2.8 字符串类型查询不加单引号</h2>
+  即你给Name建立了索引，而且你的name类型为varchar,bane你使用select name from t1 where name='a'，可以用到索引<br/>
+  但是你是用select name from t1 where name=100，不可以用到索引，因为name本身是varchar的，2000不是varchar类型，但是数据库会在底层隐式的转换你的2000类型，会导致使用不到索引,所以varchar一定要记得带上单引号<br/>
+  <h2>2.9 少使用or，用or连接时会使索引失效</h2>
+  例如:select nanme from t1 where name='a' or name='b'
