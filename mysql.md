@@ -102,3 +102,19 @@ explain基础字段解析
   但是你是用select name from t1 where name=100，不可以用到索引，因为name本身是varchar的，2000不是varchar类型，但是数据库会在底层隐式的转换你的2000类型，会导致使用不到索引,所以varchar一定要记得带上单引号<br/>
   <h2>2.9 少使用or，用or连接时会使索引失效</h2>
   例如:select nanme from t1 where name='a' or name='b'
+<h1>3.sql优化</h1>
+  in和exists的写法区别：</br>
+  exists里面包括的sql语句只会返回true和false,不会返回具体的结果集</br>
+  例如:select * from emp e where e.deptId in (select id from dept)</br>
+  select * from emp e where exists(select 1 from dept where dept.id=e.deptId)</br>
+  <h3>3.1优化步骤</h3>
+  <ul>
+    <li>1.开启慢查询日志，并且捕获慢sql</li>
+    <li>2.explain+sql进行分析</li>
+    <li>3.show profile查询sql在mysql服务器里面的执行细节和生命周期等情况</li>
+    <li>4.sql数据库参数的调优</li>
+  </ul>
+ <h3>3.2优化y原则</h3>
+   <ul>
+    <li>1.小表1驱动大表，即小得数据集驱动大的数据集</li>   
+  </ul>
