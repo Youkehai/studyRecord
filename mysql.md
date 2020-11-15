@@ -114,7 +114,20 @@ explain基础字段解析
     <li>3.show profile查询sql在mysql服务器里面的执行细节和生命周期等情况</li>
     <li>4.sql数据库参数的调优</li>
   </ul>
- <h3>3.2优化y原则</h3>
+ <h3>3.2优化原则</h3>
    <ul>
     <li>1.小表1驱动大表，即小得数据集驱动大的数据集</li>   
   </ul>
+  <h3>3.3order by</h3>
+  mysql两种排序方式:文件排序(using filesort)和索引排序(using index)。
+  mysql能为排序和查询使用相同的索引。
+  使用explain分析时，若出现using filesort则表示order by没用上索引，效率很慢，产生了数据库内排序。</br>
+  order by满足两种情况时，会使用到索引，不产生内排序：</br>
+  <h4>3.3.1.使用组合索引最前列或单独索引</h4>
+  <h4>3.3.2.使用where子句与order by子句条件列满足组合索引的最前列</h4>
+  <h4>3.3.3.优化Order by</h4>
+  3.3.3.1.尽量使用索引的方式排序，如组合索引c1,c2,那么Order by c1,c2 或者Order by c1是最好的。遵循最佳左前缀原则</br>
+  3.3.3.2.如果order by后面的字段没在索引上，那么filesort有两种排序算法，一种双路排序，一种单路排序，4.1之后的版本默认的是单路排序，使用单路排序一定注意要调整Mysql参数，因为单路排序是在sort_buffer中进行的，需要把sort_buffer参数调大一点，还有max_length_for_sort_data的参数也需要调大，不然可能单路排序的效率会更慢。</br>
+  <h4>3.3.4提高order by速度</h4>
+  3.3.4.1 order by时切忌不使用select * ,若使用select *，，因为*会使用到sort_buffer的容量，那么会影响到排序算法，会使用到双路排序，或者导致多次IO。
+  
