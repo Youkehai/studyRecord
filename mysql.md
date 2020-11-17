@@ -129,5 +129,28 @@ explain基础字段解析
   3.3.3.1.尽量使用索引的方式排序，如组合索引c1,c2,那么Order by c1,c2 或者Order by c1是最好的。遵循最佳左前缀原则</br>
   3.3.3.2.如果order by后面的字段没在索引上，那么filesort有两种排序算法，一种双路排序，一种单路排序，4.1之后的版本默认的是单路排序，使用单路排序一定注意要调整Mysql参数，因为单路排序是在sort_buffer中进行的，需要把sort_buffer参数调大一点，还有max_length_for_sort_data的参数也需要调大，不然可能单路排序的效率会更慢。</br>
   <h4>3.3.4提高order by速度</h4>
-  3.3.4.1 order by时切忌不使用select * ,若使用select *，，因为*会使用到sort_buffer的容量，那么会影响到排序算法，会使用到双路排序，或者导致多次IO。
-  
+  3.3.4.1 order by时切忌不使用select * ,若使用select *，，因为*会使用到sort_buffer的容量，那么会影响到排序算法，会使用到双路排序，或者导致多次IO。</br>
+  group by和order by优化类似，尽量少用Having就可以，group by是先排序后分组，所以也需要把sort_buffer参数调大一点，还有max_length_for_sort_data的参数也需要调大</br>
+  <h1>4.mysql慢查询日志</h1>
+  <ul>
+    <li>1. mysql默认没开启慢查询，如果不是调优需要，不必开启慢查询日志，会对性能有影响。</li>
+    <li> 2.通过show VARIABLES LIKE '%slow_query_log%'命令 查看是否开启，通过set global slow_query_log=1命令开启，重启后会失效，需要的话还需重新通过命令开启。</br>
+  需要永久生效，修改my.cnf的配置文件。</li>
+    <li>3.通过show VARIABLES LIKE '%long_query_time%'命令查看，通过long_query_time参数控制，超过多少秒的sql会被记录到慢查询日志当中，默认为10，可通过修改配置文件或set global long_query_time=x来设置时间。</br>
+    说明：正好等于x不会被记录，记录的只会是大于x的，修改过后，通过show VARIABLES LIKE '%long_query_time%'查询会发现还是10秒，是因为需要重新连接一次或者新开一个会话才会看到改变，或者通过
+    show global LIKE '%long_query_time%'查询。
+</li>
+    <li>4.记录到慢sql后，通过explain进行一步一步的优化和分析。</li>
+    <li>5.通过show global status like '%Slow_queries%'查询总共有多少慢sql</li>
+  </ul>
+ mysql有一个日志分析工具：mysqldumpslow，可通过此工具帮助分析
+  <h1>5.mysql show profile</h1>
+  可以用来分析当前会话中语句执行的资源消耗情况，用于sql调优。默认关闭状态，并保存最近的15条运行结果。<br/>
+  show profile后面可跟参数,cpu（cpu开销相关信息）,block io（io开销相关信息）,content switches（上下文切换开销）,ipc（发送和接受相关开销信息）,memory（内存相关）,page faults（页面错误相关）,source（显示和source_file,source_line,source_function相关的开销信息）,swaps（显示交换次数相关的开销信息）,all（所有）
+  <ul>
+    <li>1.show variables like 'profiling'查看是否开启，通过set profiling =on;开启</li>
+    <li>2.运行sql，执行慢sql,例如:select * from t1</li>
+    <li>3.执行show profiles，出现一个列表，三个字段,query_id表示序号，duration表示执行sql所耗费的时间，query表示执行的sql语句。</li>
+    <li>4.诊断sql，通过show profile cpu,block io for query [query_id],query_id为show profiles出现列表中对应的那个id,执行完后，会对该sql整个生命周期（从连接到缓存到执行结束）和使用的cpu,io等情况全部展示出来，然后可以看到里面也会有duration字段，会表示你的sql在生命周期的这一步当中使用的时间，从而知道sql问题出在哪，再进行优化和调整。</li>
+  <li>5.如果通过第四条执行完成后status字段出现coverting heap to myisam(查询结果太大，内存不够，已开始使用磁盘),create tmp table(创建了临时表),copying to tmp table on disk(吧内存表中的临时表复制到了磁盘),locked表示问题严重，需要及时调优修复。</li>
+  </ul>
