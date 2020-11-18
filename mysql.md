@@ -154,3 +154,27 @@ explain基础字段解析
     <li>4.诊断sql，通过show profile cpu,block io for query [query_id],query_id为show profiles出现列表中对应的那个id,执行完后，会对该sql整个生命周期（从连接到缓存到执行结束）和使用的cpu,io等情况全部展示出来，然后可以看到里面也会有duration字段，会表示你的sql在生命周期的这一步当中使用的时间，从而知道sql问题出在哪，再进行优化和调整。</li>
   <li>5.如果通过第四条执行完成后status字段出现coverting heap to myisam(查询结果太大，内存不够，已开始使用磁盘),create tmp table(创建了临时表),copying to tmp table on disk(吧内存表中的临时表复制到了磁盘),locked表示问题严重，需要及时调优修复。</li>
   </ul>
+<h1>6.mysql 锁</h1>
+innoDB与myisam的最大不同是：innoDB支持事务，并且支持行级锁。<br/>
+<h3>6.1表锁(myisam引擎)</h3>
+<h5>6.1.1读锁</h5>
+多个session，其中一个session对t1表上读锁（lock table t1 read），其他session包括上锁的session都可以对t1进行读，但是上锁的session不能写t1，也不能去读其他的表，需要释放锁之后才可以，其他session要写t1的话，会进入阻塞，等待t1锁的释放，然后再去执行写t1的命令。<br/>
+<h5>6.1.2写锁</h5>
+多个session，其中一个session对t1表上读锁（lock table t1 write），上锁的session可以对t1进行读和写，但是不能去读取除了t1之外的表，其他session读和写t1也会进行阻。<br/>
+简而言之：读锁不会阻塞读，写锁会阻塞写和读。<br/>
+可通过 show open tables查看表是否上锁。<br/>
+Myisam不适合做写为主的表，会造成严重堵塞。<br/>
+<h3>6.2mysql事务</h3>
+innodb并发事务会有以下问题：
+1.更新丢失：两个人都在改同一条记录，后面的会将前面的修改给覆盖掉（可以在用户进入修改页面时，对该数据上锁不让其修改可解决此问题）<br/>
+2.脏读：事务A读到了事务B已修改但未提交的数据，并且还在这个未提交的数据上进行了修改，此时，若B回滚事务，A读取到的数据无效，不符合一致性。<br/>
+3.不可重复：一个事务在读取某些数据后，再次读取那个数据，发现数据已经发生了改变，或者被删掉了，不符合事务的隔离性。<br/>
+4.幻读：一个事务按相同的条件去查询，却发现了其他事务插入了满足该条件的数据，不符合事务的隔离性，幻读与脏读有点类似，脏读读到了另一个事务修改了的数据，幻读则是读到了另一个事务新增的数据<br/>
+事务隔离级别：mysql默认是可重复读<br/>
+1.未提交读（READ UNCOMMITTED）：最低级别，只能保证不读取物理上损坏的数据<br/>
+2.已提交读(READ COMMITTED)：语句级别<br/>
+3.可重复读(REPEATABLE READ)：事务级别<br/>
+4.可序列化(SERIALIZABLE)：最高级别，事务级<br/>
+mysql的事务隔离级别越高，并发的副作用越小，但是付出的代价也就越大，大部分应用对于幻读和不可重复读并不是很敏感<br/>
+查看当前数据库的事务隔离级别通过“show variables like tx_isolation”<br/>
+<h3>6.3行锁(innoDB引擎)</h3>
