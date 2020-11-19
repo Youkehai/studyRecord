@@ -178,3 +178,13 @@ innodb并发事务会有以下问题：
 mysql的事务隔离级别越高，并发的副作用越小，但是付出的代价也就越大，大部分应用对于幻读和不可重复读并不是很敏感<br/>
 查看当前数据库的事务隔离级别通过“show variables like tx_isolation”<br/>
 <h3>6.3行锁(innoDB引擎)</h3>
+同时开启多个session,session1修改了id为1的记录的值，在session1未提交事务时，其他session是查不到修改后的信息的，这个就是已提交读，只有在session1执行了commit，提交了事务之后，其他session才能看到session修改后的内容，同时其他session要改id=1的记录的时候，会进入阻塞。session1在修改完成后可以直接查看到修改后的结果，但是在未提交事务前，其他session看不到修改后的结果。<br/>
+若where条件后面的字段建立的索引失效，那么会导致行锁变成表锁，切忌用对用好索引，不然会造成很大的性能问题。<br/>
+如何锁定一行数据：先begin，开启一个事务，例如：select * from t1 where a=8 for update(其中a=8 for update会对所有a=8的行进行上锁，其他session想要操作a=8的数据，会进入阻塞，直到该session执行完commit)<br/>
+可通过 show status like 'innodb_row_lock%'查看行锁情况。 通过查看innodb_row_lock_waits的大小来查看系统启动后行锁等待次数，innodb_row_lock_time_avg查看每次等待时间的平均值，innodb_row_lock_time查看所有的行锁总共等待时长，如果数值过大，则表示行锁等待严重，需要优化。
+innodb整体的并发能力和整体性能比myisam高，但是使用不但会造成行锁变表锁的情况。
+<h3>6.4间隙锁的危害</h3>
+宁可错杀不可放过。<br/>
+当我们用范围条件而不是用相等条件检索数据时，对于表中这个范围之内不存在的数据,innodb也会给他加锁，称为间隙锁。<br/>
+例如你需要给id从1-5的数据进行修改，但是你的表中只有id为1,2,3,4的数据，并没有id为5的数据，那么在你的执行update t1 set c1="1" where id between 1 and 5。<br/>
+然后session2去操作insert into t1(id,name) values ('5','a')，也会进入阻塞，因为5在1-5之中，即使你的表中没有该数据，也会被Innodb上锁，进入阻塞。<br/>
